@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#182538">
+<title>ABC楽譜ノート | 試作版 0.1</title>
+<style>
+:root{--ink:#202d3a;--sub:#657387;--line:#dbe2e9;--blue:#236ab8;--bg:#f4f6f8;--paper:#fff;--navy:#182538;--shadow:0 8px 30px rgba(25,41,61,.08)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif;color:var(--ink);background:var(--bg)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}
+header{background:var(--navy);color:#fff;padding:14px max(17px,env(safe-area-inset-left)) 13px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:12px}.logo{display:grid;place-items:center;width:39px;height:39px;border-radius:12px;background:#345a86;font-size:25px}.brand strong{display:block;font-size:17px;letter-spacing:.02em}.brand small{font-size:11px;color:#b5c8df}.header-right{font-size:11px;color:#b7c8db;text-align:right}
+main{width:min(1550px,100%);margin:auto;padding:16px;display:grid;grid-template-columns:minmax(320px, .88fr) minmax(0,1.12fr);gap:16px;align-items:start}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);min-width:0;overflow:hidden}.panel-heading{padding:17px 18px 12px;display:flex;gap:10px;align-items:center;justify-content:space-between}.panel-heading h2{margin:0;font-size:16px}.sub{color:var(--sub);font-size:12px}.note{font-size:12px;color:var(--sub);line-height:1.55}
+.editor-box{padding:0 17px 16px}#abcInput{display:block;width:100%;height:min(57vh,620px);min-height:340px;padding:14px;background:#fbfcfe;border:1px solid #cfd9e5;border-radius:10px;resize:vertical;outline:none;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.6;color:#253448;tab-size:2}#abcInput:focus{border-color:#458bcc;box-shadow:0 0 0 3px #e0edfc}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}.btn{padding:10px 14px;border-radius:10px;background:#fff;border:1px solid #ccd6e0;color:#29394a;font-size:13px;font-weight:650;min-height:41px}.btn.primary{background:#246db9;color:white;border-color:#246db9}.btn.dark{background:#243c59;border-color:#243c59;color:#fff}.btn:hover{filter:brightness(.97)}.btn:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #98c6ff;outline-offset:2px}
+.control-group{padding:15px 18px;border-top:1px solid var(--line)}.control-title{font-size:13px;font-weight:750;margin-bottom:10px}.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.controls label{font-size:12px;color:#526075;display:block;margin-bottom:5px}select,.number-control{width:100%;border:1px solid #cfd9e5;background:white;border-radius:9px;padding:10px 8px;color:#27394b;min-height:42px}.range-row{display:flex;align-items:center;gap:9px}.range-row input{width:100%;accent-color:var(--blue)}.range-value{min-width:44px;text-align:right;font-size:12px;font-weight:700}
+.chip{display:inline-flex;align-items:center;border-radius:6px;background:#e9f5ec;color:#287242;padding:4px 8px;font-size:11px;font-weight:650}.chip.warn{background:#fff2de;color:#9a5a10}.chip.error{background:#fde9e6;color:#aa372a}
+.preview-toolbar{padding:0 17px 13px;display:flex;flex-wrap:wrap;gap:8px}.preview-scroller{background:#e8edf2;border-top:1px solid var(--line);padding:16px;min-height:400px;max-height:75vh;overflow:auto}.paper{width:100%;min-height:380px;background:white;color:black;padding:24px 16px;border-radius:3px;box-shadow:0 2px 10px #1a2d4224;overflow:hidden}.paper svg{display:block;width:100%!important;max-width:100%;height:auto!important;margin:0 auto 8px;overflow:visible}.empty{color:#6b7789;display:flex;align-items:center;justify-content:center;min-height:230px;text-align:center;line-height:1.6}
+#notice{padding:11px 17px;border-top:1px solid var(--line);background:#fff;font-size:12px;color:#526075;line-height:1.6;min-height:42px}#notice.is-error{color:#ab3030;background:#fff8f6}#notice.is-warn{color:#89581c;background:#fffaf2}
+#toast{position:fixed;z-index:20;bottom:calc(20px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#1b2d41;color:white;border-radius:13px;padding:12px 18px;box-shadow:var(--shadow);max-width:90%;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s}#toast.show{opacity:1}
+.mobile-tabs{display:none}footer{width:min(1550px,100%);margin:0 auto 20px;padding:0 20px;font-size:11px;color:#798595;line-height:1.7}
+@media(max-width:860px){main{grid-template-columns:minmax(0,1fr);padding:10px;gap:11px}.mobile-tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:0 10px;margin-top:10px}.mobile-tabs button{border-radius:10px;padding:12px 8px;background:#fff;border:1px solid var(--line);font-weight:700;color:#485970}.mobile-tabs button.active{color:white;background:#243c59;border-color:#243c59}.panel{border-radius:12px}.mode-tabs #editorPanel{display:none}.mode-tabs #previewPanel{display:block}.mode-editor #previewPanel{display:none}.mode-editor #editorPanel{display:block}#abcInput{height:43vh;min-height:260px}.preview-scroller{min-height:400px;max-height:none;padding:9px}.paper{padding:18px 9px;min-height:360px}.header-right{display:none}}
+@media(min-width:861px) and (max-width:1100px){.controls{grid-template-columns:1fr}}
+@page{size:A4 portrait;margin:12mm}
+@media print{
+html,body{background:#fff!important;min-height:0}header,.mobile-tabs,#editorPanel,.preview-toolbar,.panel-heading,.control-group,#notice,#toast,footer{display:none!important}main{display:block;width:100%;margin:0;padding:0}#previewPanel{display:block!important;border:0;box-shadow:none;overflow:visible}#previewWrap{background:#fff;border:0;overflow:visible;padding:0;max-height:none;min-height:0}#paper{width:100%;padding:0;box-shadow:none;min-height:0;overflow:visible}#paper svg{width:100%!important;height:auto!important;max-width:100%;break-inside:avoid;page-break-inside:avoid;margin:0 auto 3mm!important}#paper>*{break-inside:avoid;page-break-inside:avoid}.paper{border:0}
+}
+</style>
+<style id="pageStyle">@page{size:A4 portrait;margin:12mm}</style>
+</head>
+<body class="mode-editor">
+<header><div class="brand"><div class="logo">♬</div><div><strong>ABC楽譜ノート</strong><small>Obsidian → 楽譜 → 印刷・ChatGPT</small></div></div><div class="header-right">試作版 0.1<br>原本はObsidianに保存</div></header>
+<div class="mobile-tabs" aria-label="スマートフォンの表示切替"><button id="tabEditor" type="button" class="active">✎ ABC編集</button><button id="tabPreview" type="button">♫ 楽譜を見る</button></div>
+<main>
+<section class="panel" id="editorPanel" aria-label="ABC編集エリア">
+<div class="panel-heading"><div><h2>ABCテキスト</h2><div class="sub">貼り付けて、そのまま修正できます</div></div><span class="chip" id="saveBadge">端末内に一時保存</span></div>
+<div class="editor-box">
+<textarea id="abcInput" aria-label="ABC記譜法のテキスト" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+<div class="btn-row" style="margin-top:11px"><button type="button" class="btn primary" id="renderBtn">楽譜を更新</button><button type="button" class="btn" id="copyAbcBtn">ABCをコピー</button><button type="button" class="btn" id="loadDemoBtn">例題に戻す</button></div>
+<div class="note" style="margin-top:9px">入力後は少し待つと自動更新されます。編集中の文字はこの端末に一時保存します。別の端末との同期はしません。</div>
+</div>
+<div class="control-group">
+<div class="control-title">楽譜のレイアウト</div>
+<div class="controls">
+<div><label for="layoutMode">用途</label><select id="layoutMode"><option value="practice">練習用（大きめ）</option><option value="share">配布用（標準）</option></select></div>
+<div><label for="orientation">用紙の向き</label><select id="orientation"><option value="portrait">A4縦</option><option value="landscape">A4横</option></select></div>
+<div><label for="measures">1段の小節数（目安）</label><select id="measures"><option value="0">自動</option><option value="2">2小節</option><option value="3">3小節</option><option value="4" selected>4小節</option><option value="6">6小節</option><option value="8">8小節</option></select></div>
+<div><label for="autoUpdate">更新方法</label><select id="autoUpdate"><option value="auto">自動更新</option><option value="manual">手動更新</option></select></div>
+<div style="grid-column:1/-1"><label for="scale">五線譜の大きさ</label><div class="range-row"><input id="scale" type="range" min="70" max="145" step="5" value="110"><span id="scaleValue" class="range-value">110%</span></div></div>
+</div>
+<div class="note" style="margin-top:9px">「1段の小節数」は混み具合により自動調整されます。印刷前に必ずプレビューを確認してください。</div>
+</div>
+<div class="control-group">
+<div class="control-title">ChatGPTに相談</div>
+<div class="note" style="margin-bottom:10px">曲名・拍子・テンポ・ABC原文をまとめてコピーします。楽譜画像も必要なら、別途「PNG画像」を添付してください。</div>
+<div class="btn-row"><button type="button" class="btn dark" id="copyChatBtn">相談用テキストをコピー</button><button type="button" class="btn" id="openChatBtn">ChatGPTを開く ↗</button></div>
+</div>
+</section>
+<section class="panel" id="previewPanel" aria-label="楽譜プレビュー">
+<div class="panel-heading"><div><h2>楽譜プレビュー</h2><div class="sub" id="previewSubtitle">表示を準備しています</div></div><span class="chip" id="renderBadge">準備中</span></div>
+<div class="preview-toolbar"><button type="button" class="btn primary" id="printBtn">印刷・PDF保存</button><button type="button" class="btn" id="pngBtn">PNG画像を保存／共有</button><button type="button" class="btn" id="svgBtn">SVG保存</button></div>
+<div id="previewWrap" class="preview-scroller"><div id="paper" class="paper"><div class="empty">楽譜を表示します…</div></div></div>
+<div id="notice" role="status" aria-live="polite">abcjsを読み込み中です。初回の表示にはインターネット接続が必要です。</div>
+</section>
+</main>
+<footer>個人用の試作ツールです。ABC原文をクラウドに送る機能はありません。ChatGPTへ渡すときは、コピーした内容をご自身で貼り付けてください。印刷・PDF保存は端末の標準機能を利用します。使用技術：abcjs（MIT License）。</footer>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+'use strict';
+const DEMO = `X:1
+T:ABC楽譜の例
+M:4/4
+Q:1/4=100
+L:1/8
+V:1 clef=bass
+K:C
+"C"C,2 E,2 G,2 C2 | "Am"A,2 C2 E2 A2 |
+"F"F,2 A,2 C2 F2 | "G"G,2 B,2 D2 G2 |]`;
+const $=id=>document.getElementById(id);
+const KEY='abc-sheet-notebook-v01';
+const abcInput=$('abcInput');let renderTimer=0;let toastTimer=0;let isReady=false;let visualObjs=[];
+const DEFAULTS={layoutMode:'practice',orientation:'portrait',measures:'4',autoUpdate:'auto',scale:'110'};
+const ids=['layoutMode','orientation','measures','autoUpdate','scale'];
+function readCache(){try{let x=JSON.parse(localStorage.getItem(KEY)||'null');return x&&typeof x==='object'?x:null}catch(e){return null}}
+function saveCache(){try{const options={};for(const id of ids)options[id]=$(id).value;localStorage.setItem(KEY,JSON.stringify({abc:abcInput.value,options}));$('saveBadge').textContent='一時保存済み'}catch(e){$('saveBadge').textContent='保存できません';$('saveBadge').classList.add('warn')}}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3200)}
+function notice(m,typ=''){const e=$('notice');e.textContent=m;e.className=typ?'is-'+typ:''}
+function setTab(tab){document.body.classList.remove('mode-editor','mode-tabs');document.body.classList.add(tab==='editor'?'mode-editor':'mode-tabs');$('tabEditor').classList.toggle('active',tab==='editor');$('tabPreview').classList.toggle('active',tab==='preview')}
+$('tabEditor').addEventListener('click',()=>setTab('editor'));$('tabPreview').addEventListener('click',()=>setTab('preview'));
+function setupFromCache(){let c=readCache();abcInput.value=c&&typeof c.abc==='string'?c.abc:DEMO;for(const id of ids){const el=$(id);const v=c&&c.options&&c.options[id]||DEFAULTS[id];if([...el.options||[]].some(o=>o.value===v)||el.type==='range')el.value=v;}updateLabels()}
+function updateLabels(){$('scaleValue').textContent=$('scale').value+'%';$('pageStyle').textContent='@page{size:A4 '+($('orientation').value==='landscape'?'landscape':'portrait')+';margin:12mm}'}
+function rerenderSoon(){clearTimeout(renderTimer);if($('autoUpdate').value==='auto')renderTimer=setTimeout(renderScore,480)}
+abcInput.addEventListener('input',()=>{saveCache();rerenderSoon()});
+for(const id of ids){$(id).addEventListener(id==='scale'?'input':'change',()=>{if(id==='layoutMode'){const practice=$('layoutMode').value==='practice';$('scale').value=practice?'110':'90';$('measures').value=practice?'4':'6'}updateLabels();saveCache();if(id==='autoUpdate'&&$('autoUpdate').value==='manual'){clearTimeout(renderTimer);return}rerenderSoon()})}
+function renderScore(){clearTimeout(renderTimer);if(!isReady){notice('楽譜表示エンジンを読み込めません。インターネット接続を確認して再読み込みしてください。','error');return}const abc=abcInput.value.trim();if(!abc){$('paper').innerHTML='<div class="empty">ABCテキストを入力してください。</div>';$('renderBadge').textContent='未入力';return}
+$('paper').textContent='';try{const pref=Number($('measures').value),practice=$('layoutMode').value==='practice',sc=Number($('scale').value)/100;const opts={scale:sc,oneSvgPerLine:true,responsive:'resize',staffwidth:$('orientation').value==='landscape'?1000:760,add_classes:true,paddingtop:12,paddingbottom:6,paddingleft:8,paddingright:8,stafftopmargin:practice?12:4};if(pref){opts.wrap={preferredMeasuresPerLine:pref,minSpacing:1.5,maxSpacing:3.2,lastLineLimit:1.6}}else{opts.wrap={minSpacing:1.5,maxSpacing:3.0}};visualObjs=window.ABCJS.renderAbc('paper',abc,opts);const svgs=$('paper').querySelectorAll('svg');if(!svgs.length)throw Error('楽譜が生成されませんでした。ABCの書き方を確認してください。');$('previewSubtitle').textContent=meta().title+' · '+svgs.length+'段';$('renderBadge').textContent='表示完了';$('renderBadge').className='chip';const warn=(visualObjs||[]).flatMap(o=>Array.isArray(o.warnings)?o.warnings:[]);if(warn.length){notice('楽譜は表示できましたが、注意事項が '+warn.length+' 件あります。記譜内容を確認してください。','warn')}else notice('楽譜を表示しました。印刷前に改行・音符の大きさをご確認ください。')}catch(err){console.error(err);$('renderBadge').textContent='表示失敗';$('renderBadge').className='chip error';notice('表示エラー：'+String(err.message||err),'error');$('paper').innerHTML='<div class="empty">楽譜を表示できませんでした。<br>ABCの記述をご確認ください。</div>'}}
+$('renderBtn').addEventListener('click',()=>{renderScore();setTab('preview')});
+$('loadDemoBtn').addEventListener('click',()=>{if(abcInput.value!==DEMO&&!confirm('現在の入力内容を例題で置き換えます。よろしいですか？'))return;abcInput.value=DEMO;saveCache();renderScore();toast('例題を読み込みました')});
+function meta(){const s=abcInput.value;const f=k=>{const m=s.match(new RegExp('^'+k+':\\s*(.+)$','m'));return m?m[1].trim():''};return{title:f('T')||'無題',meter:f('M')||'未指定',key:f('K')||'未指定',tempo:f('Q')||'未指定',unit:f('L')||'未指定'}}
+async function copyText(text){try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);return true}}catch(e){}const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(ta);ta.focus();ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();return ok}
+$('copyAbcBtn').addEventListener('click',async()=>toast(await copyText(abcInput.value)?'ABCをコピーしました':'コピーできません。入力欄から手動でコピーしてください'));
+function measureOutline(){
+ // 小節線の区切りから作る簡易ガイド。音符の意味を推測しない。
+ const all=abcInput.value.split(/\r?\n/);const start=all.findIndex(v=>/^K:/.test(v.trim()));
+ if(start<0)return '';
+ const body=all.slice(start+1).filter(v=>!/^\s*[%A-Za-z]:/.test(v)&&!/^\s*%%/.test(v)).join(' ');
+ let result=[],chunk='',inQuote=false;
+ for(let i=0;i<body.length;i++){let c=body[i];if(c==='\"')inQuote=!inQuote;
+ if(c==='|'&&!inQuote){let v=chunk.trim().replace(/^:+/,'').replace(/:+$/,'').trim();if(v)result.push(v);chunk='';while(body[i+1]==='|'||body[i+1]===':')i++}
+ else chunk+=c;}
+ if(chunk.trim())result.push(chunk.trim());
+ if(!result.length)return '';
+ return '\n【小節ごとのABC断片（小節線からの簡易推定。音価は未検査）】\n'+result.slice(0,120).map((s,i)=>`${i+1}小節目：${s}`).join('\n')+(result.length>120?'\n※121小節目以降は省略':'');
+}
+function makeConsultation(){const m=meta();return `次の楽譜について作曲・演奏の相談をしたいです。ABC記譜法の原文を添付します。特に、拍子・基準音価・オクターブ・休符・タイ・臨時記号を確認し、小節番号を示して説明してください。読み取りに確信が持てない箇所は推測で断定せず、確認してください。必要なら別途添付する楽譜画像とも照合してください。\n\n曲名：${m.title}\n拍子：${m.meter}\n調号：${m.key}\nテンポ：${m.tempo}\n基準音価：${m.unit}\n\n【ABC原文】\n\`\`\`abc\n${abcInput.value}\n\`\`\`${measureOutline()}\n\n相談したいこと：`;}
+$('copyChatBtn').addEventListener('click',async()=>toast(await copyText(makeConsultation())?'相談用テキストをコピーしました。ChatGPTに貼り付けてください。':'コピーできません。Safariでお試しください'));
+$('openChatBtn').addEventListener('click',()=>window.open('https://chatgpt.com/','_blank','noopener,noreferrer'));
+$('printBtn').addEventListener('click',()=>{if(!$('paper').querySelector('svg'))return toast('先に楽譜を表示してください');updateLabels();window.print()});
+function safeName(){return (meta().title||'score').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').trim().slice(0,75)||'score'}
+function serializeSvg(svg){const copy=svg.cloneNode(true);copy.setAttribute('xmlns','http://www.w3.org/2000/svg');copy.removeAttribute('style');const vb=svg.getAttribute('viewBox');if(vb){const p=vb.split(/[ ,]+/).map(Number);if(p.length===4&&p.every(Number.isFinite)){copy.setAttribute('width',p[2]);copy.setAttribute('height',p[3])}}return new XMLSerializer().serializeToString(copy)}
+function svgSize(svg){const vb=svg.getAttribute('viewBox');if(vb){const p=vb.split(/[ ,]+/).map(Number);if(p.length===4&&p.every(Number.isFinite))return{w:p[2],h:p[3]}}return{w:Number(svg.getAttribute('width'))||760,h:Number(svg.getAttribute('height'))||150}}
+function combinedSvg(){const nodes=[...$('paper').querySelectorAll('svg')];if(!nodes.length)throw Error('楽譜がありません');const gap=10,pad=20,sizes=nodes.map(svgSize),width=Math.max(...sizes.map(s=>s.w))+pad*2,height=sizes.reduce((n,s)=>n+s.h,0)+(nodes.length-1)*gap+pad*2;if(height>20000)throw Error('楽譜が長すぎます。短い範囲に分けて保存してください');let y=pad;let inner='';for(let i=0;i<nodes.length;i++){let s=serializeSvg(nodes[i]).replace(/^<svg\b/,'<svg x="'+pad+'" y="'+y+'"');inner+=s+'\n';y+=sizes[i].h+gap}const full='<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'"><rect width="100%" height="100%" fill="white"/>'+inner+'</svg>';return{content:full,width,height}}
+function offerDownload(blob,filename){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)}
+$('svgBtn').addEventListener('click',()=>{try{const s=combinedSvg();offerDownload(new Blob([s.content],{type:'image/svg+xml;charset=utf-8'}),safeName()+'.svg');toast('SVGを書き出しました')}catch(e){toast(String(e.message||e))}});
+$('pngBtn').addEventListener('click',async()=>{const btn=$('pngBtn');btn.disabled=true;btn.textContent='画像を準備中…';try{const {content,width,height}=combinedSvg();const ratio=Math.min(2,12000/Math.max(width,height));if(ratio<.5)throw Error('楽譜が長すぎます。分割して書き出してください');const b=new Blob([content],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(b),img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('画像への変換に失敗しました'));img.src=url});URL.revokeObjectURL(url);const canvas=document.createElement('canvas');canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);const ctx=canvas.getContext('2d');if(!ctx)throw Error('画像生成に失敗しました');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);const out=await new Promise((res,rej)=>canvas.toBlob(v=>v?res(v):rej(Error('PNGに変換できませんでした')),'image/png'));const file=new File([out],safeName()+'.png',{type:'image/png'});if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:meta().title});toast('画像を共有しました');return}catch(e){if(e.name==='AbortError'){toast('共有を中止しました');return}}}offerDownload(out,file.name);toast('PNG画像を保存しました')}catch(e){console.error(e);toast('画像の保存に失敗：'+String(e.message||e))}finally{btn.disabled=false;btn.textContent='PNG画像を保存／共有'}});
+function loadAbcjs(){if(window.ABCJS){isReady=true;renderScore();return}const urls=['https://cdn.jsdelivr.net/npm/abcjs@6.5.0/dist/abcjs-basic-min.js','https://unpkg.com/abcjs@6.5.0/dist/abcjs-basic-min.js'];let ix=0;function next(){if(ix>=urls.length){notice('abcjsを読み込めませんでした。通信を確認してSafariで再読み込みしてください。初回はネット接続が必要です。','error');$('paper').innerHTML='<div class="empty">楽譜表示ライブラリを読み込めませんでした。<br>通信環境をご確認ください。</div>';$('renderBadge').textContent='通信エラー';$('renderBadge').className='chip error';return}const s=document.createElement('script');s.src=urls[ix++];s.onload=()=>{if(window.ABCJS){isReady=true;renderScore()}else next()};s.onerror=next;document.head.appendChild(s)}next()}
+setupFromCache();loadAbcjs();
+</script>
+</body>
+</html>
