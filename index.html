@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#182538">
-<title>ABC楽譜ノート | 試作版 0.2</title>
+<title>ABC楽譜ノート | 試作版 0.3</title>
 <style>
 :root{--ink:#202d3a;--sub:#657387;--line:#dbe2e9;--blue:#236ab8;--bg:#f4f6f8;--paper:#fff;--navy:#182538;--shadow:0 8px 30px rgba(25,41,61,.08)}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif;color:var(--ink);background:var(--bg)}
@@ -44,7 +44,7 @@ main{width:min(1550px,100%);margin:auto;padding:16px;display:grid;grid-template-
 </head>
 <body class="mode-editor">
 <div id="appShell">
-<header><div class="brand"><div class="logo">♬</div><div><strong>ABC楽譜ノート</strong><small>Obsidian → 楽譜 → 印刷・ChatGPT</small></div></div><div class="header-right">試作版 0.2<br>原本はObsidianに保存</div></header>
+<header><div class="brand"><div class="logo">♬</div><div><strong>ABC楽譜ノート</strong><small>Obsidian → 楽譜 → 印刷・ChatGPT</small></div></div><div class="header-right">試作版 0.3<br>原本はObsidianに保存</div></header>
 <div class="mobile-tabs" aria-label="スマートフォンの表示切替"><button id="tabEditor" type="button" class="active">✎ ABC編集</button><button id="tabPreview" type="button">♫ 楽譜を見る</button></div>
 <main>
 <section class="panel" id="editorPanel" aria-label="ABC編集エリア">
@@ -52,18 +52,18 @@ main{width:min(1550px,100%);margin:auto;padding:16px;display:grid;grid-template-
 <div class="editor-box">
 <textarea id="abcInput" aria-label="ABC記譜法のテキスト" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
 <div class="btn-row" style="margin-top:11px"><button type="button" class="btn primary" id="renderBtn">楽譜を更新</button><button type="button" class="btn" id="copyAbcBtn">ABCをコピー</button><button type="button" class="btn" id="loadDemoBtn">例題に戻す</button></div>
-<div class="note" style="margin-top:9px">入力後は少し待つと自動更新されます。編集中の文字はこの端末に一時保存します。別の端末との同期はしません。</div>
+<div class="note" style="margin-top:9px">入力後は少し待つと自動更新されます。ABCの音符を書いた行の終わりで改行すると、楽譜も次の段になります。編集中の文字はこの端末に一時保存します。</div>
 </div>
 <div class="control-group">
-<div class="control-title">楽譜のレイアウト</div>
+<div class="control-title">楽譜のレイアウト（Ver.0.3：原文の改行を優先）</div>
 <div class="controls">
 <div><label for="layoutMode">用途</label><select id="layoutMode"><option value="practice">練習用（大きめ）</option><option value="share">配布用（標準）</option></select></div>
 <div><label for="orientation">用紙の向き</label><select id="orientation"><option value="portrait">A4縦</option><option value="landscape">A4横</option></select></div>
-<div><label for="measures">1段の小節数（目標）</label><select id="measures"><option value="0">自動</option><option value="2">2小節</option><option value="3">3小節</option><option value="4" selected>4小節</option><option value="6">6小節</option><option value="8">8小節</option></select></div>
+<div><label for="measures">楽譜の改行方法</label><select id="measures"><option value="source" selected>ABC原文の改行に合わせる</option><option value="auto">自動配置（4小節を目標）</option><option value="2">2小節を目標に自動配置</option><option value="3">3小節を目標に自動配置</option><option value="4">4小節を目標に自動配置</option><option value="6">6小節を目標に自動配置</option><option value="8">8小節を目標に自動配置</option></select></div>
 <div><label for="autoUpdate">更新方法</label><select id="autoUpdate"><option value="auto">自動更新</option><option value="manual">手動更新</option></select></div>
 <div style="grid-column:1/-1"><label for="scale">五線譜の大きさ</label><div class="range-row"><input id="scale" type="range" min="70" max="145" step="5" value="110"><span id="scaleValue" class="range-value">110%</span></div></div>
 </div>
-<div class="note" style="margin-top:9px">4小節は目標値です。音符が密集する場合は自動で3小節などに調整します。印刷・PDFは画面倍率と独立してA4に合わせます。</div>
+<div class="note" style="margin-top:9px">「ABC原文の改行に合わせる」では、Obsidianで音符を書いた行をそのまま楽譜の段にします。長い1行はA4印刷で小さくなる場合があります。自動配置は必要な時だけ選んでください。PDFは画面倍率と独立してA4に合わせます。</div>
 </div>
 <div class="control-group">
 <div class="control-title">ChatGPTに相談</div>
@@ -97,15 +97,15 @@ K:C
 const $=id=>document.getElementById(id);
 const KEY='abc-sheet-notebook-v01';
 const abcInput=$('abcInput');let renderTimer=0;let toastTimer=0;let isReady=false;let visualObjs=[];
-const DEFAULTS={layoutMode:'practice',orientation:'portrait',measures:'4',autoUpdate:'auto',scale:'110'};
+const DEFAULTS={layoutMode:'practice',orientation:'portrait',measures:'source',autoUpdate:'auto',scale:'110'};
 const ids=['layoutMode','orientation','measures','autoUpdate','scale'];
 function readCache(){try{let x=JSON.parse(localStorage.getItem(KEY)||'null');return x&&typeof x==='object'?x:null}catch(e){return null}}
-function saveCache(){try{const options={};for(const id of ids)options[id]=$(id).value;localStorage.setItem(KEY,JSON.stringify({abc:abcInput.value,options}));$('saveBadge').textContent='一時保存済み'}catch(e){$('saveBadge').textContent='保存できません';$('saveBadge').classList.add('warn')}}
+function saveCache(){try{const options={};for(const id of ids)options[id]=$(id).value;localStorage.setItem(KEY,JSON.stringify({abc:abcInput.value,options,layoutVersion:3}));$('saveBadge').textContent='一時保存済み'}catch(e){$('saveBadge').textContent='保存できません';$('saveBadge').classList.add('warn')}}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3200)}
 function notice(m,typ=''){const e=$('notice');e.textContent=m;e.className=typ?'is-'+typ:''}
 function setTab(tab){document.body.classList.remove('mode-editor','mode-tabs');document.body.classList.add(tab==='editor'?'mode-editor':'mode-tabs');$('tabEditor').classList.toggle('active',tab==='editor');$('tabPreview').classList.toggle('active',tab==='preview')}
 $('tabEditor').addEventListener('click',()=>setTab('editor'));$('tabPreview').addEventListener('click',()=>setTab('preview'));
-function setupFromCache(){let c=readCache();abcInput.value=c&&typeof c.abc==='string'?c.abc:DEMO;for(const id of ids){const el=$(id);const v=c&&c.options&&c.options[id]||DEFAULTS[id];if([...el.options||[]].some(o=>o.value===v)||el.type==='range')el.value=v;}updateLabels()}
+function setupFromCache(){let c=readCache();abcInput.value=c&&typeof c.abc==='string'?c.abc:DEMO;for(const id of ids){const el=$(id);let v=c&&c.options&&c.options[id]||DEFAULTS[id];if(id==='measures'&&(!c||c.layoutVersion!==3))v='source';if([...el.options||[]].some(o=>o.value===v)||el.type==='range')el.value=v;}updateLabels()}
 function updateLabels(){$('scaleValue').textContent=$('scale').value+'%';$('pageStyle').textContent='@page{size:A4 '+($('orientation').value==='landscape'?'landscape':'portrait')+';margin:0}'}
 function printableAbc(text){
  // 原文を変更せず、描画時だけ各段の先頭の小節番号を付ける。
@@ -116,9 +116,23 @@ function printableAbc(text){
 }
 function rerenderSoon(){clearTimeout(renderTimer);if($('autoUpdate').value==='auto')renderTimer=setTimeout(renderScore,480)}
 abcInput.addEventListener('input',()=>{saveCache();rerenderSoon()});
-for(const id of ids){$(id).addEventListener(id==='scale'?'input':'change',()=>{if(id==='layoutMode'){const practice=$('layoutMode').value==='practice';$('scale').value=practice?'110':'90';$('measures').value=practice?'4':'6'}updateLabels();saveCache();if(id==='autoUpdate'&&$('autoUpdate').value==='manual'){clearTimeout(renderTimer);return}rerenderSoon()})}
+for(const id of ids){$(id).addEventListener(id==='scale'?'input':'change',()=>{if(id==='layoutMode'){const practice=$('layoutMode').value==='practice';$('scale').value=practice?'110':'90'}updateLabels();saveCache();if(id==='autoUpdate'&&$('autoUpdate').value==='manual'){clearTimeout(renderTimer);return}rerenderSoon()})}
+// abcjsはwrap指定時に入力行の改行を無視する。原文優先時はwrapを渡さない。
+function applyLineMode(opts){
+ const mode=$('measures').value;
+ if(mode==='source')return opts;
+ const preferred=mode==='auto'?4:Math.max(2,Number(mode)||4);
+ opts.wrap={preferredMeasuresPerLine:preferred,minSpacing:1.05,maxSpacing:2.8,lastLineLimit:1.6};
+ return opts;
+}
+function lineModeLabel(){return $('measures').value==='source'?'ABC原文に合わせて改行':'自動配置'}
+function reportDenseLines(svgs, width){
+ // abcjsが自然な横幅を大きく広げてしまった段は印刷時に縮小が必要。
+ const long=[...svgs].filter(n=>svgSize(n).w>width*1.4).length;
+ return long?`横に長い段が ${long} 段あります。A4で音符が小さければABC原文に改行を追加してください。`:'';
+}
 function renderScore(){clearTimeout(renderTimer);if(!isReady){notice('楽譜表示エンジンを読み込めません。インターネット接続を確認して再読み込みしてください。','error');return}const abc=abcInput.value.trim();if(!abc){$('paper').innerHTML='<div class="empty">ABCテキストを入力してください。</div>';$('renderBadge').textContent='未入力';return}
-$('paper').textContent='';try{const pref=Number($('measures').value),practice=$('layoutMode').value==='practice',sc=Number($('scale').value)/100;const opts={scale:sc,oneSvgPerLine:true,responsive:'resize',staffwidth:$('orientation').value==='landscape'?1150:900,add_classes:true,paddingtop:12,paddingbottom:6,paddingleft:8,paddingright:8,stafftopmargin:practice?12:4};if(pref){opts.wrap={preferredMeasuresPerLine:pref,minSpacing:1.05,maxSpacing:2.8,lastLineLimit:1.6}}else{opts.wrap={minSpacing:1.5,maxSpacing:3.0}};visualObjs=window.ABCJS.renderAbc('paper',printableAbc(abc),opts);const svgs=$('paper').querySelectorAll('svg');if(!svgs.length)throw Error('楽譜が生成されませんでした。ABCの書き方を確認してください。');$('previewSubtitle').textContent=meta().title+' · '+svgs.length+'段';$('renderBadge').textContent='表示完了';$('renderBadge').className='chip';const warn=(visualObjs||[]).flatMap(o=>Array.isArray(o.warnings)?o.warnings:[]);if(warn.length){notice('楽譜は表示できましたが、注意事項が '+warn.length+' 件あります。記譜内容を確認してください。','warn')}else notice('楽譜を表示しました。印刷前に改行・音符の大きさをご確認ください。')}catch(err){console.error(err);$('renderBadge').textContent='表示失敗';$('renderBadge').className='chip error';notice('表示エラー：'+String(err.message||err),'error');$('paper').innerHTML='<div class="empty">楽譜を表示できませんでした。<br>ABCの記述をご確認ください。</div>'}}
+$('paper').textContent='';try{const practice=$('layoutMode').value==='practice',sc=Number($('scale').value)/100;const opts={scale:sc,oneSvgPerLine:true,responsive:'resize',staffwidth:$('orientation').value==='landscape'?1150:900,add_classes:true,paddingtop:12,paddingbottom:6,paddingleft:8,paddingright:8,stafftopmargin:practice?12:4};applyLineMode(opts);visualObjs=window.ABCJS.renderAbc('paper',printableAbc(abc),opts);const svgs=$('paper').querySelectorAll('svg');if(!svgs.length)throw Error('楽譜が生成されませんでした。ABCの書き方を確認してください。');$('previewSubtitle').textContent=meta().title+' · '+svgs.length+'段 · '+lineModeLabel();$('renderBadge').textContent='表示完了';$('renderBadge').className='chip';const warn=(visualObjs||[]).flatMap(o=>Array.isArray(o.warnings)?o.warnings:[]);const dense=reportDenseLines(svgs,opts.staffwidth);const override=($('measures').value==='source'&&/^%%(?:continueall|barsperstaff)\b/m.test(abc))?'ABC内の改行制御指示が優先されることがあります。':'';if(warn.length){notice('楽譜を表示しましたが、記譜上の注意が '+warn.length+' 件あります。'+dense+override,'warn')}else if(dense||override){notice(dense+override,'warn')}else notice('楽譜を表示しました。'+(lineModeLabel()==='ABC原文に合わせて改行'?'原文の改行位置に合わせています。':'自動で段を配置しています。')+' 印刷前にご確認ください。')}catch(err){console.error(err);$('renderBadge').textContent='表示失敗';$('renderBadge').className='chip error';notice('表示エラー：'+String(err.message||err),'error');$('paper').innerHTML='<div class="empty">楽譜を表示できませんでした。<br>ABCの記述をご確認ください。</div>'}}
 $('renderBtn').addEventListener('click',()=>{renderScore();setTab('preview')});
 $('loadDemoBtn').addEventListener('click',()=>{if(abcInput.value!==DEMO&&!confirm('現在の入力内容を例題で置き換えます。よろしいですか？'))return;abcInput.value=DEMO;saveCache();renderScore();toast('例題を読み込みました')});
 function meta(){const s=abcInput.value;const f=k=>{const m=s.match(new RegExp('^'+k+':\\s*(.+)$','m'));return m?m[1].trim():''};return{title:f('T')||'無題',meter:f('M')||'未指定',key:f('K')||'未指定',tempo:f('Q')||'未指定',unit:f('L')||'未指定'}}
@@ -151,15 +165,15 @@ function createPrintLayout(){
  const contentWidth=(pageW-marginX*2)*MM_PX;
  const contentHeight=(pageH-marginTop-marginBottom-5)*MM_PX; // ページ番号の余地
  const gap=practice?9:6; // px; 視認性を維持しつつ段間を節約
- const pref=Number($('measures').value)||4;
  const widths=portrait?(practice?[820,900,980]:[860,940,1020]):(practice?[1110,1200,1290]:[1150,1240,1330]);
  const source=$('printSource'),root=$('printRoot');
  const candidates=[];
  for(const width of widths){
   source.replaceChildren();
   const opts={scale:1,oneSvgPerLine:true,staffwidth:width,add_classes:true,
-   paddingtop:10,paddingbottom:4,paddingleft:8,paddingright:8,stafftopmargin:practice?8:3,
-   wrap:{preferredMeasuresPerLine:pref,minSpacing:1.05,maxSpacing:2.65,lastLineLimit:1.6}};
+   paddingtop:10,paddingbottom:4,paddingleft:8,paddingright:8,stafftopmargin:practice?8:3};
+  applyLineMode(opts);
+  if(opts.wrap)opts.wrap.maxSpacing=2.65;
   window.ABCJS.renderAbc(source,printableAbc(abc),opts);
   const nodes=[...source.querySelectorAll('svg')];if(!nodes.length)throw Error('印刷用の楽譜を作れませんでした');
   const size=nodes.map(svgSize);
@@ -198,7 +212,7 @@ function createPrintLayout(){
   const count=document.createElement('span');count.className='print-page-count';
   count.textContent=(p+1)+' / '+best.pages.length;sheet.appendChild(count);root.appendChild(sheet);
  });
- $('printHint').textContent='印刷用：A4'+(portrait?'縦':'横')+'・'+best.pages.length+'ページに自動配置しました（画面の拡大率とは独立）。';
+ $('printHint').textContent='印刷用：A4'+(portrait?'縦':'横')+'・'+best.pages.length+'ページに配置しました。'+(lineModeLabel()==='ABC原文に合わせて改行'?'原文の段構成を維持しています。':'自動配置を使用しています。')+'（画面の拡大率とは独立）。';
  return best.pages.length;
 }
 $('printBtn').addEventListener('click',()=>{
